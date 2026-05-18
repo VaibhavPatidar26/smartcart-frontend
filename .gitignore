@@ -1,0 +1,38 @@
+﻿# Environment files
+.env
+.env.*
+!.env.example
+
+# Node / React / Express
+node_modules/
+client/node_modules/
+server/node_modules/
+dist/
+client/dist/
+build/
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Python / Flask
+.venv/
+venv/
+ml-api/.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Runtime/cache files
+*.log
+*.pid
