@@ -18,6 +18,9 @@ const clientOrigins = (process.env.CLIENT_ORIGIN || "http://localhost:5173")
 app.use(cors({ origin: clientOrigins }));
 app.use(express.json({ limit: "1mb" }));
 app.use(morgan("dev"));
+app.get("/ping", (_request, response) => {
+  response.json({ status: "ok", service: "smartcart-express-api" });
+});
 app.use("/api", apiRouter);
 
 app.use((request, response) => {

@@ -19,6 +19,10 @@ function asyncRoute(handler) {
   return (request, response, next) => Promise.resolve(handler(request, response, next)).catch(next);
 }
 
+apiRouter.get("/ping", (_request, response) => {
+  response.json({ status: "ok", service: "smartcart-express-api" });
+});
+
 apiRouter.get(
   "/health",
   asyncRoute(async (_request, response) => {

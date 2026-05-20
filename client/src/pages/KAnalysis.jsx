@@ -1,8 +1,10 @@
-import { ChevronRight, GitBranch, Microscope, Search, Target } from "lucide-react";
+import { Activity, BarChart3, GitBranch, LineChart, Target } from "lucide-react";
 
 import { api } from "../api.js";
+import { PageHeader } from "../components/PageHeader.jsx";
 import { PlotCard } from "../components/PlotCard.jsx";
 import { Reveal } from "../components/Reveal.jsx";
+import { StatCard } from "../components/StatCard.jsx";
 import { ErrorState, LoadingState } from "../components/States.jsx";
 import { useApi } from "../components/useApi.js";
 
@@ -11,7 +13,7 @@ const darkModelLayout = {
   paper_bgcolor: "#151a2c",
   plot_bgcolor: "#151a2c",
   font: { color: "#f8fafc", family: "Inter, Segoe UI, sans-serif" },
-  margin: { t: 26, r: 28, b: 72, l: 86 },
+  margin: { t: 24, r: 28, b: 72, l: 86 },
   xaxis: {
     title: "k (clusters)",
     color: "#f8fafc",
@@ -32,24 +34,63 @@ const darkModelLayout = {
   },
 };
 
+function formatNumber(value) {
+  return Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
+}
+
+function formatScore(value) {
+  if (value === null || value === undefined) return "n/a";
+  return Number(value).toFixed(4);
+}
+
 export function KAnalysis() {
   const { data, error, loading } = useApi(api.kAnalysis);
 
   if (loading) return <LoadingState label="Calculating KMeans model selection" variant="compact" />;
   if (error) return <ErrorState error={error} />;
 
-  return (
-    <div className="page-stack diagnostic-page model-selection-page">
-      <Reveal>
-        <section className="model-selection-reference">
-          <div className="model-selection-title">
-            <Search size={34} aria-hidden="true" />
-            <h1>Model selection</h1>
-          </div>
+  const selectedK = data.selectedK;
+  const selectedIndex = data.kValues?.indexOf(selectedK) ?? -1;
+  const selectedSilhouette = selectedIndex >= 0 ? data.silhouetteScores?.[selectedIndex] : null;
+  const finalWcss = data.elbowWcss?.[data.elbowWcss.length - 1];
+  const testedKStart = data.elbowKValues?.[0];
+  const testedKEnd = data.elbowKValues?.[data.elbowKValues.length - 1];
 
+  return (
+    <div className="page-stack diagnostic-page k-analysis-page">
+      <PageHeader
+        eyebrow="KMeans diagnostics"
+        title="Choosing the customer cluster count."
+        description="Elbow, silhouette, and intersection views are combined so the model choice is readable without jumping back into the notebook."
+      />
+
+      <Reveal>
+        <section className="model-score-panel k-decision-panel">
+          <div className="analysis-copy">
+            <Target size={22} aria-hidden="true" />
+            <p className="eyebrow">Selected result</p>
+            <h2>K={selectedK} gives the chosen balance between compact clusters and separated customer groups.</h2>
+            <p>{data.selectedReason}</p>
+          </div>
+          <div className="stat-grid two-stats score-stats">
+            <StatCard label="Selected K" value={selectedK} helper="Notebook-selected" />
+            <StatCard label="Best silhouette K" value={data.bestSilhouetteK} helper={`Score ${formatScore(data.bestScore)}`} />
+          </div>
+        </section>
+      </Reveal>
+
+      <Reveal>
+        <section className="analysis-section k-diagnostic-section">
+          <div className="analysis-copy compact-copy">
+            <LineChart size={22} aria-hidden="true" />
+            <p className="eyebrow">Model fit checks</p>
+            <h2>WCSS drops as clusters increase, while silhouette shows how cleanly customers separate.</h2>
+            <p>The elbow curve looks for diminishing returns in compactness; the silhouette curve checks whether extra clusters still produce meaningful separation.</p>
+          </div>
           <div className="plot-grid two-col refined-plots">
             <PlotCard
               title="Elbow Method"
+              description="Lower WCSS means tighter clusters; the useful K is near the bend, before improvements flatten."
               className="dark-plot-card model-selection-card"
               data={[
                 {
@@ -72,6 +113,7 @@ export function KAnalysis() {
             />
             <PlotCard
               title="Silhouette Analysis"
+              description="Higher scores indicate better separated clusters across K values."
               className="dark-plot-card model-selection-card"
               data={[
                 {
@@ -93,13 +135,17 @@ export function KAnalysis() {
               }}
             />
           </div>
+        </section>
+      </Reveal>
 
+      <Reveal>
+        <section className="analysis-section k-intersection-section">
           <div className="intersection-panel">
             <div className="intersection-copy">
               <GitBranch size={22} aria-hidden="true" />
               <p className="eyebrow">Intersection graph</p>
-              <h2>Notebook-style WCSS and silhouette intersection</h2>
-              <p>This matches the notebook graph: WCSS is plotted on the left axis and silhouette score on the right axis. The selected K is taken from the intersection region.</p>
+              <h2>WCSS and silhouette are compared in one view.</h2>
+              <p>The vertical marker shows the selected K. WCSS uses the left axis and silhouette uses the right axis, so compactness and separation can be inspected together.</p>
             </div>
 
             <PlotCard
@@ -178,17 +224,42 @@ export function KAnalysis() {
               <Target size={22} aria-hidden="true" />
               <span>Selected K</span>
               <strong>{data.selectedK}</strong>
-              <small>Notebook-selected K</small>
+              <small>Silhouette {formatScore(selectedSilhouette)}</small>
             </div>
           </div>
+        </section>
+      </Reveal>
 
-          <button className="dataset-preview-toggle" type="button">
-            <ChevronRight size={20} aria-hidden="true" />
-            <Microscope size={20} aria-hidden="true" />
-            <span>Raw dataset preview</span>
-          </button>
+      <Reveal>
+        <section className="k-insight-strip">
+          <article>
+            <BarChart3 size={20} aria-hidden="true" />
+            <span>Tested K range</span>
+            <strong>{testedKStart}-{testedKEnd}</strong>
+          </article>
+          <article>
+            <Activity size={20} aria-hidden="true" />
+            <span>Final WCSS</span>
+            <strong>{formatNumber(finalWcss)}</strong>
+          </article>
+          <article>
+            <Target size={20} aria-hidden="true" />
+            <span>Selected score</span>
+            <strong>{formatScore(data.intersectionPoint?.score)}</strong>
+          </article>
+        </section>
+      </Reveal>
 
-          <p className="selected-k-note">{data.selectedReason}</p>
+      <Reveal>
+        <section className="k-reason-panel">
+          <Target size={22} aria-hidden="true" />
+          <div>
+            <p className="eyebrow">Why K = {selectedK}</p>
+            <h2>K={selectedK} is selected because it is the point where the model gains useful separation without adding unnecessary extra clusters.</h2>
+            <p>
+              The elbow curve shows that WCSS reduction starts giving smaller improvements around K={selectedK}, while the silhouette check still supports clear customer separation in the same region. That makes K={selectedK} a balanced choice: compact enough for reliable segments, but simple enough to keep the customer groups interpretable.
+            </p>
+          </div>
         </section>
       </Reveal>
     </div>

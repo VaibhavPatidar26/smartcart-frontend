@@ -16,6 +16,8 @@ PRODUCT_LABELS = {
     "MntGoldProds": "Gold",
 }
 
+OUTLIER_PAIR_COLUMNS = ["Income", "Recency", "Response", "Age", "Total_Spending", "Total_children"]
+
 
 def usable_features(features):
     return [feature for feature in features if feature not in ["clusters", "Cluster_names"]]
@@ -110,6 +112,7 @@ def get_dashboard_payload():
 
     scatter_df = df[["Income", "Total_Spending", "Age", "Recency"]].dropna().copy()
     outlier_df = get_outlier_points(df)
+    outlier_pair_df = df[OUTLIER_PAIR_COLUMNS].dropna().copy()
 
     correlation_columns = [
         "Income",
@@ -135,6 +138,8 @@ def get_dashboard_payload():
         "productSpending": product_spending,
         "incomeSpendingPoints": dataframe_to_records(scatter_df),
         "outlierPoints": dataframe_to_records(outlier_df),
+        "outlierPairColumns": OUTLIER_PAIR_COLUMNS,
+        "outlierPairPoints": dataframe_to_records(outlier_pair_df),
         "correlation": {
             "labels": correlation_columns,
             "z": correlation.values.tolist(),

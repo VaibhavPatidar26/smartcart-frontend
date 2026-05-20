@@ -45,6 +45,11 @@ def health():
     return jsonify({"status": "ok", "service": "smartcart-ml-api"})
 
 
+@bp.get("/ping")
+def ping():
+    return jsonify({"status": "ok", "service": "smartcart-ml-api"})
+
+
 @bp.get("/metrics")
 def metrics():
     return jsonify(get_metrics())
