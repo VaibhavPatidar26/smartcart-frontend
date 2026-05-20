@@ -42,6 +42,7 @@ apiRouter.get("/metrics", asyncRoute(async (_request, response) => response.json
 apiRouter.get("/dashboard", asyncRoute(async (_request, response) => response.json(await callMlApi("/dashboard"))));
 apiRouter.get("/k-analysis", asyncRoute(async (_request, response) => response.json(await callMlApi("/k-analysis"))));
 apiRouter.get("/clusters/points", asyncRoute(async (_request, response) => response.json(await callMlApi("/clusters/points"))));
+apiRouter.get("/clusters/names", asyncRoute(async (_request, response) => response.json(await callMlApi("/clusters/names"))));
 apiRouter.get("/clusters/summary", asyncRoute(async (_request, response) => response.json(await callMlApi("/clusters/summary"))));
 
 apiRouter.post(
@@ -66,6 +67,23 @@ apiRouter.get(
   asyncRoute(async (_request, response) => {
     const predictions = await CustomerPrediction.find({}).sort({ createdAt: -1 }).lean();
     response.json(predictions);
+  })
+);
+
+apiRouter.delete(
+  "/predictions/:id",
+  asyncRoute(async (request, response) => {
+    if (!/^[0-9a-fA-F]{24}$/.test(request.params.id)) {
+      return response.status(400).json({ message: "Invalid saved prediction id" });
+    }
+
+    const deletedPrediction = await CustomerPrediction.findByIdAndDelete(request.params.id).lean();
+
+    if (!deletedPrediction) {
+      return response.status(404).json({ message: "Saved prediction not found" });
+    }
+
+    return response.json({ message: "Saved prediction deleted", id: request.params.id });
   })
 );
 

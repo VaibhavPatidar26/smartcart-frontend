@@ -1,0 +1,49 @@
+services:
+  - type: web
+    runtime: python
+    name: smartcart-ml-api
+    buildCommand: pip install -r ml-api/requirements.txt
+    startCommand: gunicorn --chdir ml-api app:app --bind 0.0.0.0:$PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
+
+  - type: web
+    runtime: node
+    name: smartcart-express-api
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.14.0
+      - key: ML_API_HOST
+        fromService:
+          name: smartcart-ml-api
+          type: web
+          property: host
+      - key: ML_API_PORT
+        fromService:
+          name: smartcart-ml-api
+          type: web
+          property: port
+      - key: MONGO_URI
+        sync: false
+      - key: CLIENT_ORIGIN
+        sync: false
+
+  - type: web
+    runtime: static
+    name: smartcart-client
+    rootDir: client
+    buildCommand: npm install && npm run build
+    staticPublishPath: client/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false

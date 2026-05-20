@@ -3,6 +3,7 @@
 from smartcart_ml.model_loader import load_all_models, load_dataset
 from smartcart_ml.services import (
     get_cluster_points,
+    get_cluster_names_payload,
     get_cluster_summary,
     get_dashboard_payload,
     get_k_analysis,
@@ -62,6 +63,11 @@ def k_analysis():
 @bp.get("/clusters/points")
 def clusters_points():
     return jsonify(get_cluster_points())
+
+
+@bp.get("/clusters/names")
+def clusters_names():
+    return jsonify(get_cluster_names_payload())
 
 
 @bp.get("/clusters/summary")

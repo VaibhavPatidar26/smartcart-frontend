@@ -1,5 +1,6 @@
-﻿Flask
+Flask
 flask-cors
+gunicorn
 pandas
 numpy
 scikit-learn==1.8.0

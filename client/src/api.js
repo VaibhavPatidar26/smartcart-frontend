@@ -27,6 +27,7 @@ export const api = {
   dashboard: () => request("/dashboard"),
   kAnalysis: () => request("/k-analysis"),
   clusterPoints: () => request("/clusters/points"),
+  clusterNames: () => request("/clusters/names"),
   clusterSummary: () => request("/clusters/summary"),
   createPrediction: (customerData) =>
     request("/predictions", {
@@ -34,5 +35,9 @@ export const api = {
       body: JSON.stringify(customerData)
     }),
   predictions: () => request("/predictions"),
+  deletePrediction: (id) =>
+    request(`/predictions/${id}`, {
+      method: "DELETE"
+    }),
   predictionExportUrl: `${API_BASE_URL}/predictions/export.csv`
 };

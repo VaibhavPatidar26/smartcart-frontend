@@ -1,4 +1,4 @@
-﻿# SmartCart MERN + Flask ML
+# SmartCart MERN + Flask ML
 
 A MERN migration of the original Streamlit SmartCart customer segmentation app.
 
@@ -35,3 +35,9 @@ npm run dev
 ```
 
 React should call Express at `http://localhost:5000`, and Express calls Flask at `http://localhost:8000`.
+
+## Deployment
+
+Deployment configuration is included for Render in `render.yaml`.
+
+See `DEPLOYMENT.md` for the full deployment steps and required production environment variables.

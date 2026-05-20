@@ -1,4 +1,4 @@
-﻿const DEFAULT_ML_API_URL = "http://localhost:8000";
+const DEFAULT_ML_API_URL = "http://localhost:8000";
 
 export class MlApiError extends Error {
   constructor(message, status = 502, details = null) {
@@ -10,7 +10,15 @@ export class MlApiError extends Error {
 }
 
 function mlApiBaseUrl() {
-  return (process.env.ML_API_URL || DEFAULT_ML_API_URL).replace(/\/$/, "");
+  if (process.env.ML_API_URL) {
+    return process.env.ML_API_URL.replace(/\/$/, "");
+  }
+
+  if (process.env.ML_API_HOST && process.env.ML_API_PORT) {
+    return `http://${process.env.ML_API_HOST}:${process.env.ML_API_PORT}`;
+  }
+
+  return DEFAULT_ML_API_URL;
 }
 
 export async function callMlApi(path, options = {}) {

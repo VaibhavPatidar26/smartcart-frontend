@@ -1,5 +1,8 @@
-﻿import { api } from "../api.js";
+import { ClipboardList } from "lucide-react";
+
+import { api } from "../api.js";
 import { PageHeader } from "../components/PageHeader.jsx";
+import { Reveal } from "../components/Reveal.jsx";
 import { StatCard } from "../components/StatCard.jsx";
 import { ErrorState, LoadingState } from "../components/States.jsx";
 import { useApi } from "../components/useApi.js";
@@ -30,35 +33,47 @@ export function ClusterSummary() {
   if (error) return <ErrorState error={error} />;
 
   return (
-    <>
+    <div className="page-stack summary-page">
       <PageHeader
         eyebrow="Business insights"
-        title="Cluster Summary"
-        description="Translate machine learning segments into customer profiles and marketing direction."
+        title="Segment summaries for marketing decisions."
+        description="Each customer segment is presented as a focused business profile with response behavior and purchasing indicators."
       />
 
-      <section className="summary-list">
-        {data.map((row) => (
-          <article className="summary-item" key={row.Cluster}>
-            <div className="summary-heading">
-              <div>
-                <span>Cluster {row.Cluster}</span>
-                <h2>{displayText(row.Cluster_Name, `Cluster ${row.Cluster}`)}</h2>
+      <Reveal>
+        <section className="content-band editorial-band summary-intro">
+          <ClipboardList size={22} aria-hidden="true" />
+          <div>
+            <h2>Cluster descriptions come from the preserved model metadata.</h2>
+            <p>The numeric averages are recalculated from the CSV and model predictions whenever the Flask summary endpoint runs.</p>
+          </div>
+        </section>
+      </Reveal>
+
+      <section className="summary-list redesigned-summary-list">
+        {data.map((row, index) => (
+          <Reveal key={row.Cluster} delay={index * 80}>
+            <article className="summary-item segment-card">
+              <div className="summary-heading">
+                <div>
+                  <span>Cluster {row.Cluster}</span>
+                  <h2>{displayText(row.Cluster_Name, `Cluster ${row.Cluster}`)}</h2>
+                </div>
+                <strong>{row.Response_Rate}% response</strong>
               </div>
-              <strong>{row.Response_Rate}% response</strong>
-            </div>
-            <p>{displayText(row.Description, "No description available")}</p>
-            <div className="mini-stat-grid">
-              <StatCard label="Customers" value={row.Customer_Count} />
-              <StatCard label="Avg Income" value={money(row.Avg_Income)} />
-              <StatCard label="Avg Spending" value={money(row.Avg_Spending)} />
-              <StatCard label="Avg Recency" value={row.Avg_Recency} />
-              <StatCard label="Web Purchases" value={row.Avg_Web_Purchases} />
-              <StatCard label="Store Purchases" value={row.Avg_Store_Purchases} />
-            </div>
-          </article>
+              <p>{displayText(row.Description, "No description available")}</p>
+              <div className="mini-stat-grid">
+                <StatCard label="Customers" value={row.Customer_Count} />
+                <StatCard label="Avg Income" value={money(row.Avg_Income)} />
+                <StatCard label="Avg Spending" value={money(row.Avg_Spending)} />
+                <StatCard label="Avg Recency" value={row.Avg_Recency} />
+                <StatCard label="Web Purchases" value={row.Avg_Web_Purchases} />
+                <StatCard label="Store Purchases" value={row.Avg_Store_Purchases} />
+              </div>
+            </article>
+          </Reveal>
         ))}
       </section>
-    </>
+    </div>
   );
 }
