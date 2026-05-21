@@ -26,6 +26,16 @@ function displayText(value, fallback = "") {
   return String(value);
 }
 
+function recommendationList(value) {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (value) return [displayText(value)];
+  return [];
+}
+
+function displayClusterNumber(clusterId) {
+  return Number(clusterId) + 1;
+}
+
 export function ClusterSummary() {
   const { data, error, loading } = useApi(api.clusterSummary);
 
@@ -56,8 +66,8 @@ export function ClusterSummary() {
             <article className="summary-item segment-card">
               <div className="summary-heading">
                 <div>
-                  <span>Cluster {row.Cluster}</span>
-                  <h2>{displayText(row.Cluster_Name, `Cluster ${row.Cluster}`)}</h2>
+                  <span>Cluster {displayClusterNumber(row.Cluster)}</span>
+                  <h2>{displayText(row.Cluster_Name, `Cluster ${displayClusterNumber(row.Cluster)}`)}</h2>
                 </div>
                 <strong>{row.Response_Rate}% response</strong>
               </div>
@@ -70,6 +80,16 @@ export function ClusterSummary() {
                 <StatCard label="Web Purchases" value={row.Avg_Web_Purchases} />
                 <StatCard label="Store Purchases" value={row.Avg_Store_Purchases} />
               </div>
+              {recommendationList(row.Recommendations).length > 0 && (
+                <div className="summary-recommendations">
+                  <span>Recommendations</span>
+                  <ul>
+                    {recommendationList(row.Recommendations).map((recommendation) => (
+                      <li key={recommendation}>{recommendation}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </article>
           </Reveal>
         ))}

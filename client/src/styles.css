@@ -837,6 +837,32 @@ h3 {
   white-space: nowrap;
 }
 
+.summary-recommendations {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 14px;
+  background: #f8faf7;
+  border: 1px solid #e4e9e5;
+  border-radius: 8px;
+}
+
+.summary-recommendations span {
+  color: #1f5f55;
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.summary-recommendations ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+  color: #66736d;
+  line-height: 1.6;
+}
+
 .mini-stat-grid {
   grid-template-columns: repeat(6, minmax(0, 1fr));
   margin: 22px 0 0;
@@ -1308,6 +1334,100 @@ tr:hover td {
   margin: 0;
 }
 
+.cluster-color-key {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cluster-color-key-item {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  padding: 12px;
+  color: #dbe7ef;
+  background: #111827;
+  border: 1px solid #263244;
+  border-radius: 8px;
+}
+
+.cluster-color-swatch {
+  width: 14px;
+  height: 14px;
+  margin-top: 3px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+}
+
+.cluster-color-key-item div {
+  display: grid;
+  gap: 3px;
+}
+
+.cluster-color-key-item strong {
+  color: #f8fafc;
+  font-size: 14px;
+}
+
+.cluster-color-key-item span,
+.cluster-color-key-item small {
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.cluster-recommendations-section {
+  gap: 24px;
+}
+
+.cluster-recommendation-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.cluster-recommendation-card {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid #dde6e1;
+  border-top: 4px solid #1f5f55;
+  border-radius: 8px;
+  box-shadow: 0 14px 32px rgba(35, 48, 43, 0.06);
+}
+
+.cluster-recommendation-heading span {
+  color: #1f5f55;
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.cluster-recommendation-heading h3 {
+  margin: 4px 0 0;
+  font-size: 18px;
+}
+
+.cluster-recommendation-stats {
+  display: grid;
+  gap: 8px;
+  color: #45514c;
+  font-size: 13px;
+  font-weight: 760;
+}
+
+.cluster-recommendation-card ul {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 18px;
+  color: #66736d;
+  line-height: 1.55;
+}
+
 .editorial-band {
   display: flex;
   gap: 18px;
@@ -1532,6 +1652,14 @@ tr:hover td {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .cluster-recommendation-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cluster-color-key {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .model-score-panel,
   .cluster-overview-panel,
   .predict-layout {
@@ -1549,6 +1677,14 @@ tr:hover td {
   .compact-form-grid,
   .skeleton-stat-grid,
   .skeleton-chart-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cluster-recommendation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cluster-color-key {
     grid-template-columns: 1fr;
   }
 

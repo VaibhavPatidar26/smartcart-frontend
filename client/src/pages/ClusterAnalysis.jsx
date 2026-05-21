@@ -1,4 +1,4 @@
-import { Brain, BarChart3, Box } from "lucide-react";
+import { Brain, BarChart3, Box, Lightbulb } from "lucide-react";
 
 import { api } from "../api.js";
 import { PageHeader } from "../components/PageHeader.jsx";
@@ -37,21 +37,37 @@ function orderedGroups(points) {
   });
 }
 
+function displayClusterNumber(clusterId) {
+  return Number(clusterId) + 1;
+}
+
+function viridisClusterColor(clusterId) {
+  return ["#440154", "#31688e", "#35b779", "#fde725"][Number(clusterId)] || "#8ecae6";
+}
+
 function clusterTraces3d(points) {
-  return orderedGroups(points).map(([name, rows], index) => ({
+  return [{
     type: "scatter3d",
     mode: "markers",
-    name,
-    x: rows.map((row) => row.PCA1),
-    y: rows.map((row) => row.PCA2),
-    z: rows.map((row) => row.PCA3),
-    text: rows.map((row) => `${name}<br>Income: ${row.Income}<br>Spend: ${row.Total_Spending}`),
+    name: "labels_agg",
+    x: points.map((row) => row.PCA1),
+    y: points.map((row) => row.PCA2),
+    z: points.map((row) => row.PCA3),
+    text: points.map(
+      (row) =>
+        `Cluster ${displayClusterNumber(row.Cluster)} - ${row.Cluster_Name || "Customer segment"}`
+    ),
+    hovertemplate: "%{text}<extra></extra>",
     marker: {
       size: 4,
       opacity: 0.84,
-      color: colorForCluster(name, index),
+      color: points.map((row) => Number(row.Cluster)),
+      colorscale: "Viridis",
+      cmin: 0,
+      cmax: 3,
+      showscale: false,
     },
-  }));
+  }];
 }
 
 function bubbleSize(spending) {
@@ -75,6 +91,28 @@ function spendIncomeTraces(points) {
   }));
 }
 
+function money(value) {
+  return `$${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+}
+
+function recommendationList(value) {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (value) return [String(value)];
+  return ["Use personalized offers based on spending, response behavior, and preferred purchase channels."];
+}
+
+function clusterLegendItems(summaries) {
+  return [...summaries]
+    .sort((a, b) => Number(a.Cluster) - Number(b.Cluster))
+    .map((cluster) => ({
+      id: cluster.Cluster,
+      label: `Cluster ${displayClusterNumber(cluster.Cluster)}`,
+      name: cluster.Cluster_Name || `Customer segment ${displayClusterNumber(cluster.Cluster)}`,
+      count: cluster.Customer_Count,
+      color: viridisClusterColor(cluster.Cluster),
+    }));
+}
+
 const darkClusterLayout = {
   paper_bgcolor: "#111827",
   plot_bgcolor: "#151a2c",
@@ -88,11 +126,18 @@ const darkClusterLayout = {
 };
 
 export function ClusterAnalysis() {
-  const { data, error, loading } = useApi(api.clusterPoints);
+  const pointsRequest = useApi(api.clusterPoints);
+  const summaryRequest = useApi(api.clusterSummary);
 
-  if (loading) return <LoadingState label="Loading cluster points" variant="compact" />;
-  if (error) return <ErrorState error={error} />;
+  if (pointsRequest.loading || summaryRequest.loading) {
+    return <LoadingState label="Loading cluster points" variant="compact" />;
+  }
+  if (pointsRequest.error || summaryRequest.error) {
+    return <ErrorState error={pointsRequest.error || summaryRequest.error} />;
+  }
 
+  const data = pointsRequest.data;
+  const summaries = [...summaryRequest.data].sort((a, b) => Number(a.Cluster) - Number(b.Cluster));
   const clusters = new Set(data.map((point) => point.Cluster_Name || point.Cluster));
 
   return (
@@ -126,8 +171,8 @@ export function ClusterAnalysis() {
             <p>Drag the chart to rotate the cluster structure and inspect separation between customer groups.</p>
           </div>
           <PlotCard
-            title="3D PCA Projection of Clusters"
-            description="Agglomerative clusters projected into three PCA dimensions."
+            title="3D Projection"
+            description="Notebook Out[94]: X_pca colored by agglomerative labels."
             className="wide-plot dark-plot-card cluster-reference-card"
             data={clusterTraces3d(data)}
             layout={{
@@ -141,9 +186,21 @@ export function ClusterAnalysis() {
                 yaxis: { title: "PCA2", gridcolor: "#3b5b7f", zerolinecolor: "#5b7598", color: "#f8fafc" },
                 zaxis: { title: "PCA3", gridcolor: "#3b5b7f", zerolinecolor: "#5b7598", color: "#f8fafc" },
               },
-              legend: { orientation: "h", x: 0.02, y: 1.02, font: { color: "#f8fafc" } },
+              showlegend: false,
             }}
           />
+          <div className="cluster-color-key" aria-label="Agglomerative cluster color key">
+            {clusterLegendItems(summaries).map((item) => (
+              <div className="cluster-color-key-item" key={item.id}>
+                <span className="cluster-color-swatch" style={{ backgroundColor: item.color }} />
+                <div>
+                  <strong>{item.label}</strong>
+                  <span>{item.name}</span>
+                  <small>{item.count} customers</small>
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
       </Reveal>
 
@@ -184,6 +241,38 @@ export function ClusterAnalysis() {
               legend: { ...darkClusterLayout.legend, x: 0.82, y: 0.92 },
             }}
           />
+        </section>
+      </Reveal>
+
+      <Reveal>
+        <section className="analysis-section cluster-recommendations-section">
+          <div className="analysis-copy compact-copy">
+            <Lightbulb size={22} aria-hidden="true" />
+            <p className="eyebrow">Cluster recommendations</p>
+            <h2>Recommended actions below each agglomerative segment</h2>
+            <p>Each cluster gets its own action list, expanded from the saved notebook recommendation and the current segment averages.</p>
+          </div>
+
+          <div className="cluster-recommendation-grid">
+            {summaries.map((cluster) => (
+              <article className="cluster-recommendation-card" key={cluster.Cluster}>
+                <div className="cluster-recommendation-heading">
+                  <span>Cluster {displayClusterNumber(cluster.Cluster)}</span>
+                  <h3>{cluster.Cluster_Name || `Cluster ${cluster.Cluster}`}</h3>
+                </div>
+                <div className="cluster-recommendation-stats">
+                  <span>{cluster.Customer_Count} customers</span>
+                  <span>{money(cluster.Avg_Spending)} avg spend</span>
+                  <span>{cluster.Response_Rate}% response</span>
+                </div>
+                <ul>
+                  {recommendationList(cluster.Recommendations).map((recommendation) => (
+                    <li key={recommendation}>{recommendation}</li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
         </section>
       </Reveal>
     </div>

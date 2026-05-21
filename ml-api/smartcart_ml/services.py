@@ -1,6 +1,5 @@
 import pandas as pd
 from sklearn.cluster import AgglomerativeClustering, KMeans
-from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_score
 
 from smartcart_ml.json_utils import dataframe_to_records, numeric_list, series_counts
@@ -54,6 +53,30 @@ def metadata_description(value, fallback="No description available"):
     if value:
         return str(value)
     return fallback
+
+
+def metadata_recommendations(value, fallback=None):
+    fallback = fallback or []
+    recommendations = []
+
+    if isinstance(value, dict):
+        recommendation = value.get("recommendation")
+        if isinstance(recommendation, list):
+            recommendations.extend(str(item) for item in recommendation if item)
+        elif recommendation:
+            recommendations.append(str(recommendation))
+
+    elif isinstance(value, list):
+        recommendations.extend(str(item) for item in value if item)
+    elif value:
+        recommendations.append(str(value))
+
+    for item in fallback:
+        text = str(item)
+        if text and text not in recommendations:
+            recommendations.append(text)
+
+    return recommendations
 
 
 def prepared_dataset():
@@ -327,14 +350,14 @@ def get_k_analysis():
     }
 
 
-def get_agglomerative_labels(scaled_data):
+def get_agglomerative_labels(pca_data):
     models = load_all_models()
     agglomerative = models["agglomerative"]
 
-    if hasattr(agglomerative, "labels_") and len(agglomerative.labels_) == len(scaled_data):
+    if hasattr(agglomerative, "labels_") and len(agglomerative.labels_) == len(pca_data):
         return agglomerative.labels_
 
-    return AgglomerativeClustering(n_clusters=4).fit_predict(scaled_data)
+    return AgglomerativeClustering(n_clusters=4, linkage="ward").fit_predict(pca_data)
 
 
 def generate_cluster_dataframe():
@@ -347,8 +370,8 @@ def generate_cluster_dataframe():
     x = x.fillna(x.median(numeric_only=True))
 
     scaled_data = models["scaler"].transform(x)
-    pca_3d = PCA(n_components=3, random_state=42).fit_transform(scaled_data)
-    clusters = get_agglomerative_labels(scaled_data)
+    pca_3d = models["pca"].transform(scaled_data)
+    clusters = get_agglomerative_labels(pca_3d)
 
     cluster_df = pd.DataFrame(
         {
@@ -414,6 +437,12 @@ def get_cluster_summary():
             cluster_metadata_value(cluster_description, value, "No description available")
         )
     )
+    summary["Recommendations"] = summary["Cluster"].apply(
+        lambda value: metadata_recommendations(
+            cluster_metadata_value(cluster_description, value, None),
+            get_recommendation_by_cluster(value),
+        )
+    )
 
     return dataframe_to_records(summary)
 
@@ -421,24 +450,36 @@ def get_cluster_summary():
 def get_recommendation_by_cluster(cluster_id: int):
     recommendations = {
         0: [
-            "Target with premium product bundles.",
-            "Offer loyalty rewards and early access campaigns.",
-            "Avoid excessive discounts because this segment may already have strong spending power.",
+            "Provide discount coupons.",
+            "Promote family-size product bundles with clear savings.",
+            "Use web-first reminders because this segment has higher online browsing behavior.",
+            "Offer free delivery thresholds to lift basket size without premium positioning.",
+            "Send payday and weekend campaigns when household shopping is more likely.",
+            "Avoid expensive luxury-first offers until engagement improves.",
         ],
         1: [
-            "Use discount-based campaigns.",
-            "Send personalized offers through web channels.",
-            "Focus on reactivation and engagement improvement.",
+            "Provide loyalty programs.",
+            "Invite them to points-based reward tiers and repeat-purchase benefits.",
+            "Highlight store and catalog exclusives because offline purchasing is stronger.",
+            "Bundle high-margin products with limited-time loyalty bonuses.",
+            "Use personalized thank-you offers after large purchases.",
+            "Avoid heavy blanket discounts that reduce margin from already valuable shoppers.",
         ],
         2: [
-            "Promote family-oriented product bundles.",
-            "Use catalog and store-based offers.",
-            "Provide value packs and seasonal promotions.",
+            "Provide details about sales and give heavy discount coupons.",
+            "Run reactivation campaigns with simple, time-limited offers.",
+            "Use email and web retargeting to remind them about current promotions.",
+            "Recommend entry-level bundles before pushing high-value products.",
+            "Test small coupon values first, then increase only for non-responders.",
+            "Keep messages direct and price-focused because engagement is low.",
         ],
         3: [
-            "Focus on awareness and low-risk trial offers.",
-            "Use beginner-friendly product recommendations.",
-            "Avoid aggressive high-ticket product campaigns.",
+            "Provide premium services.",
+            "Offer early access to premium launches and limited collections.",
+            "Create VIP bundles around wines, meat, fish, and gold products.",
+            "Use concierge-style recommendations instead of broad sale messaging.",
+            "Reward loyalty with exclusive experiences rather than large discounts.",
+            "Protect margins by focusing on quality, convenience, and exclusivity.",
         ],
     }
     return recommendations.get(
