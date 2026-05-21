@@ -75,9 +75,60 @@ function money(value) {
 }
 
 function recommendationList(value) {
-  if (Array.isArray(value)) return value.filter(Boolean);
-  if (value) return [String(value)];
-  return ["Use personalized offers based on spending, response behavior, and preferred purchase channels."];
+  const values = Array.isArray(value) ? value : value ? [String(value)] : [];
+  const seen = new Set();
+
+  return values.filter((item) => {
+    const text = String(item).trim();
+    const key = text.toLowerCase().replace(/[.! ]+$/g, "");
+    if (!text || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+const FALLBACK_RECOMMENDATIONS = {
+  0: [
+    "Provide discount coupons.",
+    "Promote family-size product bundles with clear savings.",
+    "Use web-first reminders because this segment has higher online browsing behavior.",
+    "Offer free delivery thresholds to lift basket size without premium positioning.",
+    "Send payday and weekend campaigns when household shopping is more likely.",
+    "Avoid expensive luxury-first offers until engagement improves.",
+  ],
+  1: [
+    "Provide loyalty programs.",
+    "Invite them to points-based reward tiers and repeat-purchase benefits.",
+    "Highlight store and catalog exclusives because offline purchasing is stronger.",
+    "Bundle high-margin products with limited-time loyalty bonuses.",
+    "Use personalized thank-you offers after large purchases.",
+    "Avoid heavy blanket discounts that reduce margin from already valuable shoppers.",
+  ],
+  2: [
+    "Provide details about sales and give heavy discount coupons.",
+    "Run reactivation campaigns with simple, time-limited offers.",
+    "Use email and web retargeting to remind them about current promotions.",
+    "Recommend entry-level bundles before pushing high-value products.",
+    "Test small coupon values first, then increase only for non-responders.",
+    "Keep messages direct and price-focused because engagement is low.",
+  ],
+  3: [
+    "Provide premium services.",
+    "Offer early access to premium launches and limited collections.",
+    "Create VIP bundles around wines, meat, fish, and gold products.",
+    "Use concierge-style recommendations instead of broad sale messaging.",
+    "Reward loyalty with exclusive experiences rather than large discounts.",
+    "Protect margins by focusing on quality, convenience, and exclusivity.",
+  ],
+};
+
+function recommendationsForCluster(cluster) {
+  return recommendationList(
+    cluster.Recommendations ??
+      cluster.recommendations ??
+      cluster.recommendation ??
+      FALLBACK_RECOMMENDATIONS[Number(cluster.Cluster)]
+  );
 }
 
 function clusterLegendItems(summaries) {
@@ -240,7 +291,7 @@ export function ClusterAnalysis() {
                   <span>{cluster.Response_Rate}% response</span>
                 </div>
                 <ul>
-                  {recommendationList(cluster.Recommendations).map((recommendation) => (
+                  {recommendationsForCluster(cluster).map((recommendation) => (
                     <li key={recommendation}>{recommendation}</li>
                   ))}
                 </ul>

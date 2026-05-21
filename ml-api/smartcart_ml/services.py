@@ -445,6 +445,7 @@ def get_cluster_summary():
             get_recommendation_by_cluster(value),
         )
     )
+    summary["recommendations"] = summary["Recommendations"]
 
     return dataframe_to_records(summary)
 

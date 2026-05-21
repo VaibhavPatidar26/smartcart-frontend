@@ -26,14 +26,57 @@ function displayText(value, fallback = "") {
   return String(value);
 }
 
-function recommendationList(value) {
-  if (Array.isArray(value)) return value.filter(Boolean);
-  if (value) return [displayText(value)];
-  return [];
-}
-
 function displayClusterNumber(clusterId) {
   return Number(clusterId) + 1;
+}
+
+const FALLBACK_RECOMMENDATIONS = {
+  0: [
+    "Provide discount coupons.",
+    "Promote family-size product bundles with clear savings.",
+    "Use web-first reminders because this segment has higher online browsing behavior.",
+    "Offer free delivery thresholds to lift basket size without premium positioning.",
+    "Send payday and weekend campaigns when household shopping is more likely.",
+    "Avoid expensive luxury-first offers until engagement improves.",
+  ],
+  1: [
+    "Provide loyalty programs.",
+    "Invite them to points-based reward tiers and repeat-purchase benefits.",
+    "Highlight store and catalog exclusives because offline purchasing is stronger.",
+    "Bundle high-margin products with limited-time loyalty bonuses.",
+    "Use personalized thank-you offers after large purchases.",
+    "Avoid heavy blanket discounts that reduce margin from already valuable shoppers.",
+  ],
+  2: [
+    "Provide details about sales and give heavy discount coupons.",
+    "Run reactivation campaigns with simple, time-limited offers.",
+    "Use email and web retargeting to remind them about current promotions.",
+    "Recommend entry-level bundles before pushing high-value products.",
+    "Test small coupon values first, then increase only for non-responders.",
+    "Keep messages direct and price-focused because engagement is low.",
+  ],
+  3: [
+    "Provide premium services.",
+    "Offer early access to premium launches and limited collections.",
+    "Create VIP bundles around wines, meat, fish, and gold products.",
+    "Use concierge-style recommendations instead of broad sale messaging.",
+    "Reward loyalty with exclusive experiences rather than large discounts.",
+    "Protect margins by focusing on quality, convenience, and exclusivity.",
+  ],
+};
+
+function recommendationList(row) {
+  const raw = row.Recommendations ?? row.recommendations ?? row.recommendation;
+  const values = Array.isArray(raw) ? raw : raw ? [displayText(raw)] : FALLBACK_RECOMMENDATIONS[Number(row.Cluster)] || [];
+  const seen = new Set();
+
+  return values.filter((value) => {
+    const text = displayText(value).trim();
+    const key = text.toLowerCase().replace(/[.! ]+$/g, "");
+    if (!text || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 export function ClusterSummary() {
@@ -80,11 +123,11 @@ export function ClusterSummary() {
                 <StatCard label="Web Purchases" value={row.Avg_Web_Purchases} />
                 <StatCard label="Store Purchases" value={row.Avg_Store_Purchases} />
               </div>
-              {recommendationList(row.Recommendations).length > 0 && (
+              {recommendationList(row).length > 0 && (
                 <div className="summary-recommendations">
                   <span>Recommendations</span>
                   <ul>
-                    {recommendationList(row.Recommendations).map((recommendation) => (
+                    {recommendationList(row).map((recommendation) => (
                       <li key={recommendation}>{recommendation}</li>
                     ))}
                   </ul>
