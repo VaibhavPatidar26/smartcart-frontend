@@ -15,9 +15,6 @@ PRODUCT_LABELS = {
     "MntGoldProds": "Gold",
 }
 
-OUTLIER_PAIR_COLUMNS = ["Income", "Recency", "Response", "Age", "Total_Spending", "Total_children"]
-
-
 def usable_features(features):
     return [feature for feature in features if feature not in ["clusters", "Cluster_names"]]
 
@@ -58,23 +55,31 @@ def metadata_description(value, fallback="No description available"):
 def metadata_recommendations(value, fallback=None):
     fallback = fallback or []
     recommendations = []
+    seen = set()
+
+    def add_recommendation(item):
+        text = str(item).strip()
+        key = text.lower().rstrip(".! ")
+        if text and key not in seen:
+            seen.add(key)
+            recommendations.append(text)
 
     if isinstance(value, dict):
         recommendation = value.get("recommendation")
         if isinstance(recommendation, list):
-            recommendations.extend(str(item) for item in recommendation if item)
+            for item in recommendation:
+                add_recommendation(item)
         elif recommendation:
-            recommendations.append(str(recommendation))
+            add_recommendation(recommendation)
 
     elif isinstance(value, list):
-        recommendations.extend(str(item) for item in value if item)
+        for item in value:
+            add_recommendation(item)
     elif value:
-        recommendations.append(str(value))
+        add_recommendation(value)
 
     for item in fallback:
-        text = str(item)
-        if text and text not in recommendations:
-            recommendations.append(text)
+        add_recommendation(item)
 
     return recommendations
 
@@ -135,7 +140,6 @@ def get_dashboard_payload():
 
     scatter_df = df[["Income", "Total_Spending", "Age", "Recency"]].dropna().copy()
     outlier_df = get_outlier_points(df)
-    outlier_pair_df = df[OUTLIER_PAIR_COLUMNS].dropna().copy()
 
     correlation_columns = [
         "Income",
@@ -161,8 +165,6 @@ def get_dashboard_payload():
         "productSpending": product_spending,
         "incomeSpendingPoints": dataframe_to_records(scatter_df),
         "outlierPoints": dataframe_to_records(outlier_df),
-        "outlierPairColumns": OUTLIER_PAIR_COLUMNS,
-        "outlierPairPoints": dataframe_to_records(outlier_pair_df),
         "correlation": {
             "labels": correlation_columns,
             "z": correlation.values.tolist(),

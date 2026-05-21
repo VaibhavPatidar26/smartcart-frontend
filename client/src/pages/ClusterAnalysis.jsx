@@ -45,29 +45,8 @@ function viridisClusterColor(clusterId) {
   return ["#440154", "#31688e", "#35b779", "#fde725"][Number(clusterId)] || "#8ecae6";
 }
 
-function clusterTraces3d(points) {
-  return [{
-    type: "scatter3d",
-    mode: "markers",
-    name: "labels_agg",
-    x: points.map((row) => row.PCA1),
-    y: points.map((row) => row.PCA2),
-    z: points.map((row) => row.PCA3),
-    text: points.map(
-      (row) =>
-        `Cluster ${displayClusterNumber(row.Cluster)} - ${row.Cluster_Name || "Customer segment"}`
-    ),
-    hovertemplate: "%{text}<extra></extra>",
-    marker: {
-      size: 4,
-      opacity: 0.84,
-      color: points.map((row) => Number(row.Cluster)),
-      colorscale: "Viridis",
-      cmin: 0,
-      cmax: 3,
-      showscale: false,
-    },
-  }];
+function viridisColorName(clusterId) {
+  return ["Purple", "Blue", "Green", "Yellow"][Number(clusterId)] || "Color";
 }
 
 function bubbleSize(spending) {
@@ -110,6 +89,7 @@ function clusterLegendItems(summaries) {
       name: cluster.Cluster_Name || `Customer segment ${displayClusterNumber(cluster.Cluster)}`,
       count: cluster.Customer_Count,
       color: viridisClusterColor(cluster.Cluster),
+      colorName: viridisColorName(cluster.Cluster),
     }));
 }
 
@@ -167,34 +147,28 @@ export function ClusterAnalysis() {
           <div className="analysis-copy compact-copy">
             <Box size={22} aria-hidden="true" />
             <p className="eyebrow">3D cluster map</p>
-            <h2>3D PCA projection of clusters</h2>
-            <p>Drag the chart to rotate the cluster structure and inspect separation between customer groups.</p>
+            <h2>3D PCA using Agglomerative Approach</h2>
+            <p>This is the notebook Out[94] graph: PCA1, PCA2, and PCA3 colored by agglomerative cluster labels.</p>
           </div>
-          <PlotCard
-            title="3D Projection"
-            description="Notebook Out[94]: X_pca colored by agglomerative labels."
-            className="wide-plot dark-plot-card cluster-reference-card"
-            data={clusterTraces3d(data)}
-            layout={{
-              ...darkClusterLayout,
-              height: 720,
-              margin: { t: 18, r: 20, b: 28, l: 20 },
-              scene: {
-                bgcolor: "#111111",
-                camera: { eye: { x: 1.55, y: 1.35, z: 1.1 } },
-                xaxis: { title: "PCA1", gridcolor: "#3b5b7f", zerolinecolor: "#5b7598", color: "#f8fafc" },
-                yaxis: { title: "PCA2", gridcolor: "#3b5b7f", zerolinecolor: "#5b7598", color: "#f8fafc" },
-                zaxis: { title: "PCA3", gridcolor: "#3b5b7f", zerolinecolor: "#5b7598", color: "#f8fafc" },
-              },
-              showlegend: false,
-            }}
-          />
+          <div className="pca-image-card wide-plot cluster-reference-card">
+            <div className="pca-image-header">
+              <h3>3D PCA using Agglomerative Approach</h3>
+              <p>Notebook Out[94] rendered directly from the uploaded notebook.</p>
+            </div>
+            <div className="pca-image-wrap">
+              <img
+                className="pca-cluster-image"
+                src="/agglomerative-pca-out94.png"
+                alt="3D PCA scatter plot using agglomerative clustering with four colored customer clusters"
+              />
+            </div>
+          </div>
           <div className="cluster-color-key" aria-label="Agglomerative cluster color key">
             {clusterLegendItems(summaries).map((item) => (
               <div className="cluster-color-key-item" key={item.id}>
                 <span className="cluster-color-swatch" style={{ backgroundColor: item.color }} />
                 <div>
-                  <strong>{item.label}</strong>
+                  <strong>{item.colorName} dots: {item.label}</strong>
                   <span>{item.name}</span>
                   <small>{item.count} customers</small>
                 </div>

@@ -45,119 +45,6 @@ function outlierTraces(points) {
   }));
 }
 
-function notebookOutlierMatrix(points, columns) {
-  const groups = points.reduce(
-    (acc, point) => {
-      const key = Number(point.Age) >= 90 || Number(point.Income) >= 600000 ? "Notebook outlier" : "Typical";
-      acc[key].push(point);
-      return acc;
-    },
-    { Typical: [], "Notebook outlier": [] }
-  );
-
-  const traces = [];
-  const layout = {
-    height: 1180,
-    margin: { t: 42, r: 24, b: 56, l: 56 },
-    barmode: "overlay",
-    hovermode: "closest",
-    showlegend: true,
-    legend: { orientation: "h", x: 0, y: 1.04 },
-    dragmode: "pan",
-  };
-
-  const gap = 0.018;
-  const cellSize = (1 - gap * (columns.length - 1)) / columns.length;
-
-  columns.forEach((yColumn, rowIndex) => {
-    columns.forEach((xColumn, columnIndex) => {
-      const cellIndex = rowIndex * columns.length + columnIndex + 1;
-      const axisSuffix = cellIndex === 1 ? "" : cellIndex;
-      const xAxisRef = `x${axisSuffix}`;
-      const yAxisRef = `y${axisSuffix}`;
-      const xAxisKey = `xaxis${axisSuffix}`;
-      const yAxisKey = `yaxis${axisSuffix}`;
-      const xStart = columnIndex * (cellSize + gap);
-      const xEnd = xStart + cellSize;
-      const yEnd = 1 - rowIndex * (cellSize + gap);
-      const yStart = yEnd - cellSize;
-      const isDiagonal = rowIndex === columnIndex;
-
-      layout[xAxisKey] = {
-        domain: [xStart, xEnd],
-        title: { text: xColumn, font: { size: 9 }, standoff: 4 },
-        showline: true,
-        linecolor: "#6b7671",
-        linewidth: 1,
-        mirror: true,
-        ticks: "outside",
-        ticklen: 3,
-        tickfont: { size: 8, color: "#4d5a55" },
-        gridcolor: "#edf1ee",
-        zerolinecolor: "#dfe5e1",
-        automargin: true,
-      };
-
-      layout[yAxisKey] = {
-        domain: [yStart, yEnd],
-        title: { text: isDiagonal ? "Count" : yColumn, font: { size: 9 }, standoff: 4 },
-        showline: true,
-        linecolor: "#6b7671",
-        linewidth: 1,
-        mirror: true,
-        ticks: "outside",
-        ticklen: 3,
-        tickfont: { size: 8, color: "#4d5a55" },
-        gridcolor: "#edf1ee",
-        zerolinecolor: "#dfe5e1",
-        automargin: true,
-      };
-
-      Object.entries(groups).forEach(([name, rows], groupIndex) => {
-        if (!rows.length) return;
-
-        const color = name === "Notebook outlier" ? "#c2410c" : "#1f5f55";
-        const baseTrace = {
-          name,
-          legendgroup: name,
-          showlegend: cellIndex === 1,
-          xaxis: xAxisRef,
-          yaxis: yAxisRef,
-          marker: { color, opacity: name === "Notebook outlier" ? 0.86 : 0.32 },
-        };
-
-        if (isDiagonal) {
-          traces.push({
-            ...baseTrace,
-            type: "histogram",
-            x: rows.map((row) => row[xColumn]),
-            nbinsx: 18,
-            opacity: groupIndex === 0 ? 0.48 : 0.76,
-            hovertemplate: `${xColumn}: %{x}<br>Count: %{y}<extra>${name}</extra>`,
-          });
-          return;
-        }
-
-        traces.push({
-          ...baseTrace,
-          type: "scatter",
-          mode: "markers",
-          x: rows.map((row) => row[xColumn]),
-          y: rows.map((row) => row[yColumn]),
-          marker: {
-            ...baseTrace.marker,
-            size: name === "Notebook outlier" ? 5 : 3,
-            line: { color: "#ffffff", width: name === "Notebook outlier" ? 0.45 : 0 },
-          },
-          hovertemplate: `${xColumn}: %{x}<br>${yColumn}: %{y}<extra>${name}</extra>`,
-        });
-      });
-    });
-  });
-
-  return { traces, layout };
-}
-
 export function Dashboard() {
   const { data, error, loading } = useApi(api.dashboard);
 
@@ -166,9 +53,6 @@ export function Dashboard() {
 
   const scatter = data.incomeSpendingPoints || [];
   const outliers = data.outlierPoints || [];
-  const outlierPairColumns = data.outlierPairColumns || ["Income", "Recency", "Response", "Age", "Total_Spending", "Total_children"];
-  const outlierPairPoints = data.outlierPairPoints || [];
-  const outlierMatrix = notebookOutlierMatrix(outlierPairPoints, outlierPairColumns);
 
   return (
     <div className="page-stack dashboard-page">
@@ -251,26 +135,6 @@ export function Dashboard() {
             className="wide-plot"
             data={outlierTraces(outliers)}
             layout={{ height: 560, xaxis: { ...moneyAxis, title: "Income", range: [0, 170000] }, yaxis: { ...moneyAxis, title: "Total spending", range: [0, 2800] } }}
-          />
-        </section>
-      </Reveal>
-
-      <Reveal>
-        <section className="analysis-section centered-section">
-          <div className="analysis-copy compact-copy">
-            <AlertTriangle size={22} aria-hidden="true" />
-            <p className="eyebrow">Notebook pairplot</p>
-            <h2>All outlier relationship maps from the notebook</h2>
-            <p>This reproduces the notebook pairplot columns with visible axes and exact labels: Income, Recency, Response, Age, Total_Spending, and Total_children.</p>
-          </div>
-          <PlotCard
-            title="Outlier Pairplot - Notebook Feature Map"
-            description="Red points match the notebook removal rules: Age >= 90 or Income >= 600000."
-            className="wide-plot outlier-pairplot-card"
-            data={outlierMatrix.traces}
-            layout={{
-              ...outlierMatrix.layout,
-            }}
           />
         </section>
       </Reveal>
